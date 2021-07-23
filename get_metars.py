@@ -30,7 +30,7 @@ def zerofill(a):
 
 
 def extractWeather(source, index):
-    wind = re.findall("([0-9]{5}G*[0-9]*KT)|(VRB[0-9]{2}KT)", source[index])
+    wind = re.findall("([0-9]{5}G*[0-9]*KT)|(VRB[0-9]{2}G*[0-9]*KT)", source[index])
     if len(wind) == 0:
         wind = ""
     else:
@@ -156,7 +156,7 @@ def getListOfAirports():
     return list_of_airports
 
 
-def insert_metar(airport, timestamp, wind, vis, clouds_magnitudes, clouds_altitudes):
+def insert_new_metar(airport, timestamp, wind, vis, clouds_magnitudes, clouds_altitudes):
     sql = """INSERT INTO new_metars(identifier, time_stamp, visibility, cloud_altitudes, cloud_magnitudes, wind) 
     VALUES(%s, %s, %s, %s::int[], %s::varchar[], %s) ON CONFLICT DO NOTHING;"""
     conn = None
@@ -180,47 +180,53 @@ def insert_metar(airport, timestamp, wind, vis, clouds_magnitudes, clouds_altitu
     """Use "TRUNCATE table;" to delete everything from a table"""
 
 
-i = 0
-j = 0
+if __name__ == '__main__':
+    t0 = time.time()
+    i = 0
+    j = 0
 
-counter = 0
+    counter = 0
 
-list_of_airports = getListOfAirports()
-# list_of_airports = ['KABE', 'KABI', 'KABQ', 'KABR', 'KABY', 'KACK', 'KACT', 'KACV', 'KACY', 'KADF', 'KADW', 'KAEG', 'KAEX', 'KAFF', 'KAFW', 'KAGC', 'KAGS', 'KAHN', 'KAIA', 'KALB', 'KALI', 'KFHU', 'KALO', 'KALS', 'KALW', 'KAMA', 'KANB', 'KAND', 'KAOO', 'KAPA', 'KAPC', 'KAPF', 'KAPN', 'KARA', 'KART', 'KASD', 'KASE', 'KAST', 'KATL', 'KATW', 'KATY', 'KAUG', 'KAUS', 'KAUW', 'KAVL', 'KAVP', 'KAXN', 'KAZO', 'KBAB', 'KBAD', 'KBAF', 'KBAM', 'KBBD', 'KBBG', 'KBCB', 'KBCE', 'KBDL', 'KBDN', 'KBDR', 'KBED', 'KBFD', 'KBFF', 'KBFI', 'KBFL', 'KBFM', 'KBGM', 'KBGR', 'KBHB', 'KBHM', 'KBIF', 'KBIH', 'KBIL', 'KBIS', 'KBIX', 'KBJC', 'KBJI', 'KBKE', 'KBKW', 'KBLF', 'KBLH', 'KBLI', 'KBLV', 'KBMG', 'KBMI', 'KBNA', 'KBNO', 'KBOI', 'KBOS', 'KBPI', 'KBPK', 'KBPT', 'KBRD', 'KBRL', 'KBRO', 'KBTL', 'KBTM', 'KBTR', 'KBTV', 'KBUF', 'KBUR', 'KBVI', 'KBVO', 'KBWG', 'KBWI', 'KBYI', 'KBZN', 'KCAE', 'KCAK', 'KCAR', 'KCBM', 'KCDC', 'KCDR', 'KCDS', 'KCEC', 'KCEF', 'KCGI', 'KCHA', 'KCHO', 'KCHS', 'KCID', 'KCKB', 'KCKV', 'KCLE', 'KCLL', 'KCLM', 'KCLT', 'KCMA', 'KCMH', 'KCMI', 'KCMX', 'KCNM', 'KCNU', 'KCNY', 'KCOD', 'KCOE', 'KCON', 'KCOS', 'KCOT', 'KCOU', 'KCPR', 'KCPS', 'KCRE', 'KCRG', 'KCRP', 'KCRQ', 'KCRW', 'KCSG', 'KCSM', 'KCSV', 'KCTB', 'KCUB', 'KCVG', 'KCWA', 'KCXO', 'KCXP', 'KCYS', 'KDAA', 'KDAB', 'KDAG', 'KDAL', 'KDAN', 'KDAY', 'KDBQ', 'KDCA', 'KDDC', 'KDEC', 'KDEN', 'KDET', 'KDFW', 'KDHN', 'KDHT', 'KDIJ', 'KDIK', 'KDLF', 'KDLH', 'KDLS', 'KDMA', 'KDMN', 'KDNL', 'KDOV', 'KDPA', 'KDRO', 'KDRT', 'KDSM', 'KDTW', 'KDUJ', 'KDVL', 'KDVT', 'KDYS', 'KEAR', 'KEAT', 'KEAU', 'KECG', 'KECP', 'KEDW', 'KEED', 'KEET', 'KEFD', 'KEFK', 'KEGE', 'KEGI', 'KEKN', 'KEKO', 'KEKS', 'KELD', 'KELM', 'KELP', 'KELY', 'KEND', 'KENV', 'KENW', 'KERI', 'KEUG', 'KEUL', 'KEVV', 'KEVW', 'KEWN', 'KEWR', 'KEYW', 'KFAF', 'KFAR', 'KFAT', 'KFAY', 'KFBG', 'KGPI', 'KFCS', 'KFDY', 'KFFO', 'KFHU', 'KFKL', 'KFLG', 'KFLL', 'KFLO', 'KFMH', 'KFMN', 'KFMY', 'KFNT', 'KFOD', 'KFOE', 'KFPR', 'KFRI', 'KFSD', 'KFSM', 'KFST', 'KFTK', 'KFTW', 'KFTY', 'KFVE', 'KFWA', 'KFXE', 'KFYV', 'KGBD', 'KGCC', 'KGCK', 'KGCN', 'KGDV', 'KGEG', 'KGFA', 'KGFK', 'KGFL', 'KGGG', 'KGGW', 'KGJT', 'KGKY', 'KGLD', 'KGLH', 'KGLS', 'KGMU', 'KGNV', 'KGON', 'KGPI', 'KGPT', 'KGRB', 'KGRF', 'KGRI', 'KGRK', 'KGRR', 'KGSB', 'KGSO', 'KGSP', 'KGTF', 'KGTR', 'KGUC', 'KGUP', 'KGUS', 'KGUY', 'KGWO', 'KGYY', 'KHBG', 'KHCR', 'KHDN', 'KHIB', 'KHIE', 'KHIF', 'KHIO', 'KHKS', 'KHKY', 'KHLG', 'KHLN', 'KHMN', 'KHND', 'KHOB', 'KHON', 'KHOP', 'KHOT', 'KHOU', 'KHPN', 'KHQM', 'KHRL', 'KHRO', 'KHRT', 'KHST', 'KHSV', 'KHTS', 'KHUF', 'KHUL', 'KHUM', 'KHUT', 'KHVR', 'KHYA', 'KHYR', 'KHYS', 'KIAB', 'KIAD', 'KIAG', 'KIAH', 'KICT', 'KIDA', 'KIFP', 'KILG', 'KILM', 'KILN', 'KIND', 'KINK', 'KINL', 'KINS', 'KINT', 'KINW', 'KIPL', 'KIPT', 'KISM', 'KISO', 'KISP', 'KITH', 'KIWA', 'KIWD', 'KIXD', 'KJAC', 'KJAN', 'KJAX', 'KJBR', 'KJCT', 'KJEF', 'KJFK', 'KJER', 'KJHW', 'KJLN', 'KJMS', 'KJST', 'KJZI', 'KLAF', 'KLAL', 'KLAN', 'KLAR', 'KLAS', 'KLAW', 'KLAX', 'KLBB', 'KLBE', 'KLBF', 'KLBL', 'KLCH', 'KLCK', 'KLEB', 'KLEE', 'KLEX', 'KLFI', 'KLFK', 'KLFT', 'KLGA', 'KLGB', 'KLGU', 'KLIT', 'KLLQ', 'KLMT', 'KLND', 'KLNK', 'KLNS', 'KLOZ', 'KLRD', 'KLRF', 'KLRU', 'KLSE', 'KLSF', 'KLSV', 'KLUF', 'KLUK', 'KLVK', 'KLVM', 'KLVS', 'KLWB', 'KLWS', 'KLWT', 'KLYH', 'KMAF', 'KMBG', 'KMBS', 'KMCB', 'KMCC', 'KMCE', 'KMCF', 'KMCI', 'KMCK', 'KMCN', 'KMCO', 'KMCW', 'KMDT', 'KMDW', 'KMEI', 'KMEM', 'KMER', 'KMEV', 'KMFE', 'KMFR', 'KMGE', 'KMGM', 'KMGW', 'KMHK', 'KMHR', 'KMHT', 'KMIA', 'KMIV', 'KMKE', 'KMKL', 'KMKT', 'KMLB', 'KMLC', 'KMLI', 'KMLS', 'KMLU', 'KMMH', 'KMMT', 'KMOB', 'KMOD', 'KMOT', 'KMPV', 'KMQY', 'KMRB', 'KMRY', 'KMSL', 'KMSN', 'KMSO', 'KMSP', 'KMSS', 'KMSY', 'KMTC', 'KMTH', 'KMTJ', 'KMTN', 'KMTW', 'KMUO', 'KMWH', 'KMXF', 'KMYL', 'KMYR', 'KNBC', 'KNBG', 'KNCA', 'KNEW', 'KNFG', 'KNFL', 'KNFW', 'KNGP', 'KNGU', 'KNHK', 'KNID', 'KNIP', 'KNJK', 'KNKT', 'KNKX', 'KNLC', 'KNMM', 'KNPA', 'KNQX', 'KNRB', 'KNSE', 'KNTD', 'KNTU', 'KNUC', 'KNUW', 'KNYG', 'KNYL', 'KNXP', 'KNZY', 'KOAJ', 'KOAK', 'KOFK', 'KOGB', 'KOGD', 'KOKC', 'KOLF', 'KOLM', 'KOLS', 'KOMA', 'KONP', 'KONT', 'KOPF', 'KORD', 'KORF', 'KORH', 'KOTH', 'KOTM', 'KOUN', 'KOWB', 'KOXR', 'KOZR', 'KPAE', 'KPAH', 'KPAM', 'KPBF', 'KPBG', 'KPBI', 'KPDK', 'KPDT', 'KPDX', 'KPEQ', 'KPGA', 'KPGD', 'KPGV', 'KPHF', 'KPHL', 'KPHX', 'KPIA', 'KPIB', 'KPIE', 'KPIH', 'KPIR', 'KPIT', 'KPKB', 'KPMD', 'KPNA', 'KPNC', 'KPNE', 'KPNS', 'KPOB', 'KPOU', 'KPQI', 'KPRB', 'KPRC', 'KPSC', 'KPSF', 'KPSM', 'KPSP', 'KPUB', 'KPUW', 'KPVD', 'KPVU', 'KPVW', 'KPWM', 'KPWT', 'KRAP', 'KRBG', 'KRBL', 'KRCA', 'KRDD', 'KRDG', 'KRDM', 'KRDR', 'KRDU', 'KRFD', 'KRIC', 'KRIL', 'KRIV', 'KRIW', 'KRKD', 'KRKS', 'KRME', 'KRNO', 'KROA', 'KROC', 'KROG', 'KROW', 'KRSL', 'KRST', 'KRSW', 'KRUT', 'KRVS', 'KRWI', 'KRWL', 'KRYY', 'KSAC', 'KSAF', 'KSAN', 'KSAT', 'KSAV', 'KSAW', 'KSBA', 'KSBD', 'KSBM', 'KSBN', 'KSBP', 'KSBY', 'KSCK', 'KSDF', 'KSDL', 'KSDY', 'KSEA', 'KSEZ', 'KSFB', 'KSFF', 'KSFO', 'KSGF', 'KSGJ', 'KSGU', 'KSGU', 'KSHR', 'KSHV', 'KSJC', 'KSJT', 'KSKA', 'KSKF', 'KSLC', 'KSLE', 'KSLI', 'KSLK', 'KSLN', 'KSME', 'KSMF', 'KSMN', 'KSMO', 'KSMX', 'KSNA', 'KSNS', 'KSNY', 'KSOA', 'KSPI', 'KSPS', 'KSRQ', 'KSSC', 'KSSF', 'KSTC', 'KSTL', 'KSTS', 'KSUA', 'KSUN', 'KSUS', 'KSUU', 'KSUX', 'KSWF', 'KSWO', 'KSYR', 'KSZL', 'KTCC', 'KTCL', 'KTCM', 'KTCS', 'KTEB', 'KTEX', 'KTIX', 'KTLH', 'KTMB', 'KTOI', 'KTOL', 'KTOP', 'KTPA', 'KTPH', 'KTRI', 'KTRK', 'KTRM', 'KTTD', 'KTTN', 'KTUL', 'KTUP', 'KTUS', 'KTVC', 'KTVL', 'KTWF', 'KTXK', 'KTYR', 'KTYS', 'KUAO', 'KUES', 'KUIN', 'KUKI', 'KUNV', 'KUTS', 'KVBG', 'KVCT', 'KVEL', 'KVGT', 'KVIS', 'KVLD', 'KVNY', 'KVPS', 'KVQQ', 'KVRB', 'KVTN', 'KWJF', 'KWMC', 'KWRB', 'KWRI', 'KWRL', 'KWWR', 'KWYS', 'KXNA', 'KXWA', 'KYIP', 'KYKM', 'KYNG', 'KZZV']
-list_of_airports = ['KEND']
+    list_of_airports = getListOfAirports()
+    # list_of_airports = ['KHRT']
 
-print(list_of_airports)
-for airport in list_of_airports:
-    print(airport)
+    for airport in list_of_airports:
+        print(airport)
 
-    j+=1
-    url = "https://www.aviationweather.gov/metar/data?ids=" + airport + "&format=raw&date=&hours=0&taf=on"
-    html_content = requests.get(url).text
-    soup = BeautifulSoup(html_content, features="html.parser").get_text()
+        j+=1
+        url = "https://www.aviationweather.gov/metar/data?ids=" + airport + "&format=raw&date=&hours=0&taf=on"
+        html_content = requests.get(url).text
+        soup = BeautifulSoup(html_content, features="html.parser").get_text()
 
-    metar_and_reg_taf_patt = airport + ".+"
-    amd_taf_patt = "TAF AMD " + airport + ".+"
-    mil_taf_patt = "TAF " + airport + ".+"
-    pattern = "(" + metar_and_reg_taf_patt + "|" + amd_taf_patt + "|" + mil_taf_patt + ")"
-    # Makes a list of airports that publish both a METAR and a TAF
-    metar_and_taf = re.findall(pattern, soup)
-    if len(metar_and_taf) > 1:
-        print("METAR: " + str(metar_and_taf[0]))
-        print("TAF: " + str(metar_and_taf[1]))
-        # print(metar_and_taf)
-        # Pull METAR info
-        metar_time = extractTime(metar_and_taf[0])
-        metar_time = str(enumerateDatetime(metar_time))
-        print("Metar time: " + str(metar_time))
-        metar_wind, metar_vis, metar_clouds_list = extractWeather(metar_and_taf, 0)
-        print("Metar Wind: " + str(metar_wind))
-        print("Metar Vis: " + str(metar_vis))
-        print("Metar clouds:")
-        # Split the clouds apart to create 2 lists, one for magnitude (CLR, SCT, etc.) and one for altitude
-        magnitude_list, altitude_list = splitClouds(metar_clouds_list)
-        print(metar_clouds_list)
-        print(magnitude_list)
-        print(altitude_list)
-        insert_metar(airport=airport, timestamp=metar_time, wind=metar_wind,
-                             vis=metar_vis, clouds_magnitudes=magnitude_list, clouds_altitudes=altitude_list)
-        counter += 1
+        metar_and_reg_taf_patt = airport + ".+"
+        amd_taf_patt = "TAF AMD " + airport + ".+"
+        mil_taf_patt = "TAF " + airport + ".+"
+        pattern = "(" + metar_and_reg_taf_patt + "|" + amd_taf_patt + "|" + mil_taf_patt + ")"
+        # Makes a list of airports that publish both a METAR and a TAF
+        metar_and_taf = re.findall(pattern, soup)
+        if len(metar_and_taf) > 1:
+            print("METAR: " + str(metar_and_taf[0]))
+            print("TAF: " + str(metar_and_taf[1]))
+            # print(metar_and_taf)
+            # Pull METAR info
+            metar_time = extractTime(metar_and_taf[0])
+            metar_time = str(enumerateDatetime(metar_time))
+            print("Metar time: " + str(metar_time))
+            metar_wind, metar_vis, metar_clouds_list = extractWeather(metar_and_taf, 0)
+            print("Metar Wind: " + str(metar_wind))
+            print("Metar Vis: " + str(metar_vis))
+            print("Metar clouds:")
+            # Split the clouds apart to create 2 lists, one for magnitude (CLR, SCT, etc.) and one for altitude
+            magnitude_list, altitude_list = splitClouds(metar_clouds_list)
+            print(metar_clouds_list)
+            print(magnitude_list)
+            print(altitude_list)
+            insert_new_metar(airport=airport, timestamp=metar_time, wind=metar_wind,
+                                 vis=metar_vis, clouds_magnitudes=magnitude_list, clouds_altitudes=altitude_list)
+            counter += 1
+    print('------------')
+
+    t1 = time.time()
+    total = t1 - t0
+    print("Time taken:")
+    print(total)
